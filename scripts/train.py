@@ -10,13 +10,15 @@ from torch.utils.data import DataLoader
 from torchvision.transforms import transforms as T
 from torchvision.transforms._transforms_video import ToTensorVideo
 
-from tubevit.dataset import MyUCF101
+from tubevit.dataset import MyUCF101, MyGodcaster
 from tubevit.model import TubeViTLightningModule
+
+from torch.utils.data import random_split
 
 
 @click.command()
-@click.option("-r", "--dataset-root", type=click.Path(exists=True), required=True, help="path to dataset.")
-@click.option("-a", "--annotation-path", type=click.Path(exists=True), required=True, help="path to dataset.")
+@click.option("-r", "--dataset-root", type=click.Path(exists=False), default="lmao", help="path to dataset.")
+@click.option("-a", "--annotation-path", type=click.Path(exists=False), default="lmao", help="path to dataset.")
 @click.option("-nc", "--num-classes", type=int, default=101, help="num of classes of dataset.")
 @click.option("-b", "--batch-size", type=int, default=32, help="batch size.")
 @click.option("-f", "--frames-per-clip", type=int, default=32, help="frame per clip.")
@@ -63,6 +65,7 @@ def main(
         ]
     )
 
+    """
     train_metadata_file = "ucf101-train-meta.pickle"
     train_precomputed_metadata = None
     if os.path.exists(train_metadata_file):
@@ -102,9 +105,15 @@ def main(
     if not os.path.exists(val_metadata_file):
         with open(val_metadata_file, "wb") as f:
             pickle.dump(val_set.metadata, f, protocol=pickle.HIGHEST_PROTOCOL)
+    """
+
+    set = MyGodcaster("/scratch/kxu39/merged/", "/scratch/kxu39/merged/", None, None, train_transform)
+    print("about to start making train_set and val_set")
+    # train_set, val_set = random_split(set, [int(len(set) * 0.8), len(set) - int(len(set) * 0.8)])
+    print("Finished making train_set and val_set")
 
     train_dataloader = DataLoader(
-        train_set,
+        set,
         batch_size=batch_size,
         num_workers=num_workers,
         shuffle=True,
@@ -112,14 +121,15 @@ def main(
         pin_memory=True,
     )
 
-    val_dataloader = DataLoader(
-        val_set,
-        batch_size=batch_size,
-        num_workers=num_workers,
-        shuffle=False,
-        drop_last=True,
-        pin_memory=True,
-    )
+    # val_dataloader = DataLoader(
+    #     val_set,
+    #     batch_size=batch_size,
+    #     num_workers=num_workers,
+    #     shuffle=False,
+    #     drop_last=True,
+    #     pin_memory=True,
+    # )
+    print("Dataloaders are done")
 
     x, y = next(iter(train_dataloader))
     print(x.shape)
@@ -158,7 +168,7 @@ def main(
         logger=logger,
         callbacks=callbacks,
     )
-    trainer.fit(model, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
+    trainer.fit(model, train_dataloaders=train_dataloader)
     trainer.save_checkpoint("./models/tubevit_ucf101.ckpt")
 
 
