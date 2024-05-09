@@ -99,13 +99,14 @@ class MyGodcaster(Dataset):
         container = cv2.VideoCapture(file_pair[0])
         FPS = container.get(cv2.CAP_PROP_FPS)
         # sentence_index = og_index - index
-        sentence_index = random.randint(0, len(captions) - 1)
+        sentence_index = random.randint(0, 10)
         print("sentence index", sentence_index)
         print("captions[sentence_index]['start']", captions[sentence_index]["start"])
         sentence_start_frame = math.ceil(captions[sentence_index]["start"] * FPS)
         print("sentence start frame", sentence_start_frame)
 
         if sentence_start_frame < 230:
+            print(f"sentence start frame too small")
             num_copies = 230 // sentence_start_frame
             left_over = 230 % sentence_start_frame
             indicies = [0]*(num_copies + left_over)
@@ -113,8 +114,10 @@ class MyGodcaster(Dataset):
             for i in range(1, sentence_start_frame):
                 indicies += [i]*num_copies
         elif sentence_start_frame < FPS * 60:
+            print(f"sentence start frame is less than a minute")
             indicies = list(np.linspace(0, sentence_start_frame, num=230))
         else:
+            print(f"sentence start frame is big. we need to sample the frame indices")
             indicies = self.sample_frame_indices(sentence_start_frame, FPS)
 
         indicies = [sentence_start_frame-x for x in indicies][::-1]

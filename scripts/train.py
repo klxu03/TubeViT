@@ -132,7 +132,7 @@ def main(
     print("Dataloaders are done")
 
     x, y = next(iter(train_dataloader))
-    print(x.shape)
+    print(f"x.shape {x.shape}")
 
     if preview_video:
         x = x.permute(0, 2, 3, 4, 1)
@@ -157,6 +157,7 @@ def main(
         weight_path="tubevit_b_(a+iv)+(d+v)+(e+iv)+(f+v).pt",
         max_epochs=max_epochs,
     )
+    print("made the TubeVIT model")
 
     callbacks = [pl.callbacks.LearningRateMonitor(logging_interval="epoch")]
     logger = TensorBoardLogger("logs", name="TubeViT")
@@ -168,6 +169,8 @@ def main(
         logger=logger,
         callbacks=callbacks,
     )
+
+    print(f"Made the trainer")
     trainer.fit(model, train_dataloaders=train_dataloader)
     trainer.save_checkpoint("./models/tubevit_ucf101.ckpt")
 
